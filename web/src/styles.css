@@ -1,0 +1,20 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+@theme {
+  --color-tc: #004b5e;
+  --color-tc-light: #e6f0f3;
+  --color-tc-dark: #00313d;
+  --color-gold: #e0a526;
+  --color-silver: #9aa6ad;
+  --color-bronze: #b8743c;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body {
+  background: #f4f7f8;
+  color: #1c2a30;
+}
+
+.prose-math .katex { font-size: 1.05em; }
+.prose-math img { max-width: 100%; }

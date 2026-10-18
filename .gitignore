@@ -1,0 +1,6 @@
+# Indeholder de rigtige svar: må aldrig committes
+supabase/seed.sql
+node_modules
+web/dist
+web/.env
+web/.env.local
