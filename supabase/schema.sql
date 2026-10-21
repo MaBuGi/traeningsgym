@@ -53,7 +53,7 @@ create index if not exists attempts_problem_idx on public.attempts (problem_id);
 create table if not exists public.admins (
   email text primary key
 );
-insert into public.admins (email) values ('mathiasbuhlgilje@gmail.com'), ('nc@talentcamp.dk') on conflict do nothing;
+insert into public.admins (email) values ('mathiasbuhlgilje@gmail.com'), ('nc@talentcamp.dk'), ('alexanderbilleandersen@outlook.dk') on conflict do nothing;
 
 -- ------------------------------------------------------------------ adgang
 
