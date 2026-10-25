@@ -5,7 +5,7 @@
 --   * Svarene (answers) og andres forsøg forlader aldrig serveren. Deltagerne kan kun læse ugens opgaver,
 --     deres egen profil og deres egne forsøg.
 --   * Et forsøg kan kun indsendes gennem submit_answer(), som tjekker svaret og giver point (30/15/5).
---   * scoreboard() viser kun visningsnavne, aldrig e-mails. admin_progress() virker kun for e-mails i admins.
+--   * scoreboard() er kun for administratorer og viser kun visningsnavne, aldrig e-mails. admin_progress() virker kun for e-mails i admins.
 
 create table if not exists public.weeks (
   id        int primary key,
@@ -157,7 +157,7 @@ language sql stable security definer set search_path = public as $$
   where p.week_id = p_week and w.closes_at <= now() and auth.uid() is not null;
 $$;
 
--- Top 3 og den indloggede deltager, med kumulerede point over tid til grafen. p_week null = alle uger.
+-- Top 3 med kumulerede point over tid til grafen. p_week null = alle uger. Kun for administratorer.
 -- Administratorer tæller ikke med (de må gerne prøve opgaverne uden at ligge på listen).
 create or replace function public.scoreboard(p_week int default null) returns json
 language sql stable security definer set search_path = public as $$
@@ -203,7 +203,7 @@ language sql stable security definer set search_path = public as $$
       ) order by sh.pos)
       from shown sh), '[]'::json)
   )
-  where auth.uid() is not null;
+  where public.is_admin();
 $$;
 
 -- Alt om alle deltagere for én uge. Kun for administratorer.

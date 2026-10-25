@@ -118,22 +118,24 @@ ok('svar skjult mens ugen er åben');
 
 console.log('scoreboard');
 // u1: 30, u3: 5 + 30 = 35, u2: 15, u4: 0, u5: 0, admin: 0
-let sb = (await as('u5', `select scoreboard() as s`))[0].s;
+assert.equal((await as('u5', `select scoreboard() as s`))[0].s, null);
+ok('almindelige deltagere kan ikke se scoreboardet');
+let sb = (await as('admin', `select scoreboard() as s`))[0].s;
 assert.equal(sb.participants, 5);
 assert.deepEqual(sb.rows.map((x) => [x.name, x.points, x.rank, x.me]), [
-  ['Navn u3', 35, 1, false], ['Navn u1', 30, 2, false], ['Navn u2', 15, 3, false], ['Navn u5', 0, 4, true]]);
+  ['Navn u3', 35, 1, false], ['Navn u1', 30, 2, false], ['Navn u2', 15, 3, false]]);
 assert.deepEqual(sb.rows[0].series.map((s) => s.p), [5, 35]);
 assert.ok(!JSON.stringify(sb).includes('example.dk'));
-ok('top 3 + mig, kumuleret graf, ingen e-mails');
+ok('top 3, kumuleret graf, ingen e-mails');
 await submit('admin', P2, answer[P2]);
 sb = (await as('admin', `select scoreboard() as s`))[0].s;
 assert.equal(sb.participants, 5);
 assert.ok(!sb.rows.some((x) => x.me || x.name === 'Navn admin'));
 ok('administratoren er ikke med på scoreboardet');
-sb = (await as('u1', `select scoreboard(1) as s`))[0].s;
+sb = (await as('admin', `select scoreboard(1) as s`))[0].s;
 assert.equal(sb.rows.length, 3);
-assert.equal(sb.rows.find((x) => x.me).points, 30);
-sb = (await as('u1', `select scoreboard(2) as s`))[0].s;
+assert.equal(sb.rows.find((x) => x.name === 'Navn u1').points, 30);
+sb = (await as('admin', `select scoreboard(2) as s`))[0].s;
 assert.ok(sb.rows.every((x) => x.points === 0));
 ok('filter pr. uge');
 

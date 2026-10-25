@@ -81,7 +81,7 @@ kræver resten af GM_TC-mappen (../algebra, ../geometri osv.), så kør den fra 
 
 ## Drift
 
-- **Du som admin.** `mathiasbuhlgilje@gmail.com` står i tabellen `admins`. Når du logger ind med den mail, får du fanen **Admin**: et heatmap over alle elever × opgaver, hvem der ikke er startet, % løst pr. opgave og CSV-eksport. Admins vises ikke på scoreboardet. Tilføj flere admins i SQL Editor:
+- **Du som admin.** `mathiasbuhlgilje@gmail.com` står i tabellen `admins`. Når du logger ind med den mail, får du fanen **Admin**: et heatmap over alle elever × opgaver, hvem der ikke er startet, % løst pr. opgave og CSV-eksport. Øverst på Admin-fanen ligger også scoreboardet (top 3 for ugen); admins selv tæller ikke med. Tilføj flere admins i SQL Editor:
   ```sql
   insert into admins values ('mail@eksempel.dk');
   ```

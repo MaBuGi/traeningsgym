@@ -3,6 +3,7 @@ import type { AdminCell, AdminProgress, AdminUser, Api, Week } from './api';
 import { Card, Spinner } from './App';
 import { WeekTabs, defaultWeek } from './Problems';
 import { fmtDateTime } from './format';
+import ScoreboardView from './Scoreboard';
 
 type Sort = 'point' | 'navn' | 'aktivitet';
 
@@ -51,6 +52,8 @@ export default function Admin({ api, weeks }: { api: Api; weeks: Week[] }) {
             <Box label="Ikke startet" value={idle.length} />
             <Box label="Gns. point (i gang)" value={started.length ? Math.round(started.reduce((s, u) => s + u.points, 0) / started.length) : 0} />
           </div>
+
+          {weekId != null && <ScoreboardView api={api} weeks={weeks} weekId={weekId} />}
 
           <Card className="p-0">
             <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-3">

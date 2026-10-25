@@ -3,13 +3,12 @@ import { makeApi, type Api, type User, type Week } from './api';
 import Login from './Login';
 import NameSetup from './NameSetup';
 import Problems from './Problems';
-import ScoreboardView from './Scoreboard';
 import Admin from './Admin';
 
-type Tab = 'opgaver' | 'scoreboard' | 'admin';
+type Tab = 'opgaver' | 'admin';
 const tabFromHash = (): Tab => {
   const h = location.hash.replace('#', '');
-  return h === 'scoreboard' || h === 'admin' ? h : 'opgaver';
+  return h === 'admin' ? h : 'opgaver';
 };
 
 export default function App() {
@@ -61,7 +60,6 @@ export default function App() {
       nav={
         <>
           <NavButton active={shown === 'opgaver'} onClick={() => go('opgaver')}>Opgaver</NavButton>
-          <NavButton active={shown === 'scoreboard'} onClick={() => go('scoreboard')}>Scoreboard</NavButton>
           {admin && <NavButton active={shown === 'admin'} onClick={() => go('admin')}>Admin</NavButton>}
         </>
       }
@@ -74,7 +72,6 @@ export default function App() {
       mock={api.mock}
     >
       {shown === 'opgaver' && <Problems api={api} weeks={weeks} />}
-      {shown === 'scoreboard' && <ScoreboardView api={api} weeks={weeks} />}
       {shown === 'admin' && <Admin api={api} weeks={weeks} />}
     </Shell>
   );
