@@ -5,7 +5,7 @@ Hver uge åbner 30 Abel-opgaver (runde 1) i ét emne:
 | Uge | Emne | Åbner | Lukker |
 |---|---|---|---|
 | 1 | algebra | 18/10 | 26/10 |
-| 2 | kombinatorik | 26/10 | 2/11 |
+| 2 | kombinatorik | 25/10 | 2/11 |
 | 3 | talteori | 2/11 | 9/11 |
 | 4 | geometri | 9/11 | 16/11 |
 

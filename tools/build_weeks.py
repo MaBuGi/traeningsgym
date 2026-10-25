@@ -18,7 +18,7 @@ FIG = HERE / 'web' / 'public' / 'fig'
 # Ugerne i rækkefølge. Datoerne kan rettes her eller direkte i tabellen weeks i Supabase.
 WEEKS = [
     (1, 'algebra', 'Algebra', '2026-10-18 00:00', '2026-10-26 00:00'),
-    (2, 'kombinatorik', 'Kombinatorik', '2026-10-26 00:00', '2026-11-02 00:00'),
+    (2, 'kombinatorik', 'Kombinatorik', '2026-10-25 00:00', '2026-11-02 00:00'),
     (3, 'talteori', 'Talteori', '2026-11-02 00:00', '2026-11-09 00:00'),
     (4, 'geometri', 'Geometri', '2026-11-09 00:00', '2026-11-16 00:00'),
 ]
