@@ -23,6 +23,8 @@ WEEKS = [
     (4, 'geometri', 'Geometri', '2026-11-09 00:00'),
 ]
 PER_WEEK = 30
+# Egen rækkefølge for et emne: linje k i filen er det opgavenummer (i den oprindelige rækkefølge), der skal stå som opgave k.
+CUSTOM_ORDER = {'talteori': HERE / 'neworder.txt'}
 BREAKOUT = 15
 
 # Figurer hvor andet end figuren ligger inden for udsnittet: hvide rektangler [x, y, b, h] i PDF-punkter på siden.
@@ -124,6 +126,12 @@ def main():
             p['figure'] = crop(topic, p) if p['fig'] else None
         if len(probs) != PER_WEEK:
             errors.append(f'{topic}: {len(probs)} opgaver')
+        if topic in CUSTOM_ORDER:
+            nrs = [int(x) for x in CUSTOM_ORDER[topic].read_text(encoding='utf-8').split()]
+            if sorted(nrs) != list(range(1, len(probs) + 1)):
+                errors.append(f'{topic}: {CUSTOM_ORDER[topic].name} er ikke en ombytning af 1–{len(probs)}')
+            else:
+                probs = [probs[n - 1] for n in nrs]
         weeks.append((wid, topic, title, opens, probs))
         print(f'uge {wid} {topic}: {len(probs)} opgaver, {sum(1 for p in probs if p["figure"])} figurer, '
               f'{probs[0]["id"]} … {probs[-1]["id"]}')
@@ -138,6 +146,8 @@ def main():
     sql = ['-- GENERERET af tools/build_weeks.py. Indeholder svarene: må ikke committes eller lægges på hjemmesiden.',
            '-- Kør efter schema.sql. Kan køres igen: opgaver og svar opdateres, forsøg bevares.', 'begin;']
     for wid, topic, title, opens, probs in weeks:
+        # Negative numre først, så en ny rækkefølge ikke rammer unique (week_id, nr) undervejs.
+        sql.append(f"update problems set nr = -nr where week_id = {wid};")
         sql.append(f"insert into weeks (id, topic, title, opens_at) values ({wid}, '{topic}', '{title}', "
                    f"timestamptz '{opens} Europe/Copenhagen')\n"
                    f"  on conflict (id) do update set topic = excluded.topic, title = excluded.title, "
