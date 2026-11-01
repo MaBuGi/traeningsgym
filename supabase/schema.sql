@@ -11,9 +11,10 @@ create table if not exists public.weeks (
   id        int primary key,
   topic     text not null,
   title     text not null,
-  opens_at  timestamptz not null,
-  closes_at timestamptz not null
+  opens_at  timestamptz not null
 );
+-- Ugerne lukker ikke længere: en åbnet uge kan løses for altid.
+alter table public.weeks drop column if exists closes_at;
 
 create table if not exists public.problems (
   id      text primary key,                 -- fx 'algebra/2005-1'
@@ -120,9 +121,6 @@ begin
   if not found or now() < w.opens_at then
     raise exception 'Ukendt opgave.';
   end if;
-  if now() >= w.closes_at then
-    raise exception 'Ugen er lukket.';
-  end if;
 
   -- To hurtige klik på samme opgave må ikke begge blive talt som "første forsøg".
   perform pg_advisory_xact_lock(hashtext(uid::text || p_problem));
@@ -148,14 +146,8 @@ begin
 end;
 $$;
 
--- De rigtige svar, men kun for uger der er lukket.
-create or replace function public.week_answers(p_week int)
-returns table (problem_id text, letter text)
-language sql stable security definer set search_path = public as $$
-  select a.problem_id, a.letter
-  from public.answers a join public.problems p on p.id = a.problem_id join public.weeks w on w.id = p.week_id
-  where p.week_id = p_week and w.closes_at <= now() and auth.uid() is not null;
-$$;
+-- De rigtige svar vises aldrig for deltagerne, så den gamle funktion til det skal væk.
+drop function if exists public.week_answers(int);
 
 -- Top 3 med kumulerede point over tid til grafen. p_week null = alle uger. Kun for administratorer.
 -- Administratorer tæller ikke med (de må gerne prøve opgaverne uden at ligge på listen).
@@ -239,7 +231,7 @@ begin
 end;
 $$;
 
-revoke all on function public.is_admin(), public.submit_answer(text, text), public.week_answers(int),
+revoke all on function public.is_admin(), public.submit_answer(text, text),
   public.scoreboard(int), public.admin_progress(int) from public, anon;
-grant execute on function public.is_admin(), public.submit_answer(text, text), public.week_answers(int),
+grant execute on function public.is_admin(), public.submit_answer(text, text),
   public.scoreboard(int), public.admin_progress(int) to authenticated;

@@ -13,8 +13,8 @@ await db.exec(read('../supabase/seed.sql'));
 await db.exec(read('../supabase/seed.sql'));
 
 // Uge 1 åben, uge 2 i fremtiden, uanset hvornår testen køres.
-await db.exec(`update weeks set opens_at = now() - interval '1 day', closes_at = now() + interval '6 days' where id = 1;
-               update weeks set opens_at = now() + interval '6 days', closes_at = now() + interval '13 days' where id = 2;`);
+await db.exec(`update weeks set opens_at = now() - interval '1 day' where id = 1;
+               update weeks set opens_at = now() + interval '6 days' where id = 2;`);
 
 let passed = 0;
 const ok = (name) => { passed++; console.log('  ✓', name); };
@@ -112,9 +112,9 @@ assert.equal((await as('u1', `select * from attempts`)).length, 1);
 assert.equal((await as('u3', `select * from attempts`)).length, 4);
 ok('ser kun sine egne forsøg');
 
-console.log('svar efter ugen');
-assert.equal((await as('u4', `select * from week_answers(1)`)).length, 0);
-ok('svar skjult mens ugen er åben');
+console.log('rigtige svar');
+await fails('u4', `select * from week_answers(1)`, [], /does not exist/);
+ok('der er ingen funktion, der udleverer svarene, heller ikke efter en låst opgave');
 
 console.log('scoreboard');
 // u1: 30, u3: 5 + 30 = 35, u2: 15, u4: 0, u5: 0, admin: 0
@@ -151,10 +151,10 @@ assert.equal(ad.users.find((u) => u.email === 'u3@example.dk').points, 35);
 assert.ok(ad.users.some((u) => u.email === 'u6@example.dk' && u.name === null));
 ok('admin ser alle (også dem uden navn) med forsøg pr. opgave');
 
-console.log('lukket uge');
-await db.exec(`update weeks set opens_at = now() - interval '8 days', closes_at = now() - interval '1 day' where id = 1`);
-assert.equal((await as('u4', `select * from week_answers(1)`)).length, 30);
-await fails('u5', `select submit_answer($1, $2)`, [P2, answer[P2]], /lukket/);
-ok('svarene vises og der kan ikke svares, når ugen er lukket');
+console.log('gamle uger');
+await db.exec(`update weeks set opens_at = now() - interval '300 days' where id = 1`);
+r = await submit('u5', P2, answer[P2]);
+assert.deepEqual(r, { correct: true, points: 30, wrong_left: 3 });
+ok('en gammel uge kan stadig løses og giver fuldt point');
 
 console.log(`\n${passed} tests bestået`);

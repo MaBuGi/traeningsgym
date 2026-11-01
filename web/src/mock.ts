@@ -18,7 +18,7 @@ export async function mockApi(): Promise<Api> {
     await db.exec(schema);
     await db.exec(seed);
     // Datoerne fra seed.sql bevares, bortset fra at uge 1 altid er åben, når mocken oprettes.
-    await db.exec(`update weeks set opens_at = now() - interval '2 days', closes_at = now() + interval '5 days' where id = 1`);
+    await db.exec(`update weeks set opens_at = now() - interval '2 days' where id = 1`);
     await demoData(db);
   }
 
@@ -72,13 +72,8 @@ export async function mockApi(): Promise<Api> {
     },
     weeks: () => q(`select * from weeks order by id`),
     problems: (week) => q(`select * from problems where week_id = $1 order by nr`, [week]),
-    attempts: (week) => q(`select a.problem_id, a.letter, a.correct, a.points, a.created_at from attempts a
-                           join problems p on p.id = a.problem_id where p.week_id = $1 order by a.created_at`, [week]),
+    attempts: () => q(`select problem_id, letter, correct, points, created_at from attempts order by created_at`),
     submit: (problem, letter) => one(`select submit_answer($1, $2) as r`, [problem, letter]),
-    async weekAnswers(week) {
-      const rows = await q<{ problem_id: string; letter: string }>(`select * from week_answers($1)`, [week]);
-      return Object.fromEntries(rows.map((r) => [r.problem_id, r.letter]));
-    },
     scoreboard: (week) => one(`select scoreboard($1) as r`, [week]),
     isAdmin: () => one(`select is_admin() as r`),
     adminProgress: (week) => one(`select admin_progress($1) as r`, [week]),

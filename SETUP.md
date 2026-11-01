@@ -2,16 +2,16 @@
 
 Hver uge åbner 30 Abel-opgaver (runde 1) i ét emne:
 
-| Uge | Emne | Åbner | Lukker |
-|---|---|---|---|
-| 1 | algebra | 18/10 | 26/10 |
-| 2 | kombinatorik | 25/10 | 2/11 |
-| 3 | talteori | 2/11 | 9/11 |
-| 4 | geometri | 9/11 | 16/11 |
+| Uge | Emne | Åbner |
+|---|---|---|
+| 1 | algebra | 18/10 |
+| 2 | kombinatorik | 25/10 |
+| 3 | talteori | 2/11 |
+| 4 | geometri | 9/11 |
 
-Ugen lukker kl. 00:00 dansk tid den nævnte dag.
+En uge åbner kl. 00:00 dansk tid den nævnte dag og lukker aldrig igen, så ældre uger kan altid løses. Elevens point er samlet over alle uger.
 
-Pointene er 30 / 15 / 5 for rigtigt svar i 1./2./3. forsøg. Efter tre forkerte svar er opgaven låst. Det rigtige svar vises først, når ugen er lukket.
+Pointene er 30 / 15 / 5 for rigtigt svar i 1./2./3. forsøg. Efter tre forkerte svar er opgaven låst. Eleverne får aldrig det rigtige svar at se; kun admins kan se svarene.
 
 ```
 content/<emne>.js        danske opgaver (kombinatorik, talteori, geometri); algebra kommer fra ../algebra/arcade/content.js
@@ -81,7 +81,7 @@ kræver resten af GM_TC-mappen (../algebra, ../geometri osv.), så kør den fra 
 
 ## Drift
 
-- **Du som admin.** `mathiasbuhlgilje@gmail.com` står i tabellen `admins`. Når du logger ind med den mail, får du fanen **Admin**: et heatmap over alle elever × opgaver, hvem der ikke er startet, % løst pr. opgave og CSV-eksport. Øverst på Admin-fanen ligger også scoreboardet (top 3 for ugen); admins selv tæller ikke med. Tilføj flere admins i SQL Editor:
+- **Du som admin.** `mathiasbuhlgilje@gmail.com` står i tabellen `admins`. Når du logger ind med den mail, får du fanen **Admin**: et heatmap over alle elever × opgaver, hvem der ikke er startet, % løst pr. opgave og CSV-eksport. Øverst på Admin-fanen ligger også scoreboardet (top 3 over alle uger); admins selv tæller ikke med. Tilføj flere admins i SQL Editor:
   ```sql
   insert into admins values ('mail@eksempel.dk');
   ```

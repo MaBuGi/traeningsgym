@@ -7,19 +7,19 @@ const MEDAL = ['#e0a526', '#9aa6ad', '#b8743c'];
 const day = new Intl.DateTimeFormat('da-DK', { day: 'numeric', month: 'short', timeZone: 'Europe/Copenhagen' });
 const dayTime = new Intl.DateTimeFormat('da-DK', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Copenhagen' });
 
-// Top 3 for den valgte uge. Vises kun på admin-siden.
-export default function ScoreboardView({ api, weeks, weekId }: { api: Api; weeks: Week[]; weekId: number }) {
+// Top 3 over alle uger. Vises kun på admin-siden.
+export default function ScoreboardView({ api, weeks }: { api: Api; weeks: Week[] }) {
   const [data, setData] = useState<Scoreboard | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      setData(await api.scoreboard(weekId));
+      setData(await api.scoreboard(null));
       setError(null);
     } catch (e) {
       setError((e as Error).message);
     }
-  }, [api, weekId]);
+  }, [api]);
   useEffect(() => {
     setData(null);
     void load();
@@ -27,9 +27,8 @@ export default function ScoreboardView({ api, weeks, weekId }: { api: Api; weeks
     return () => clearInterval(t);
   }, [load]);
 
-  const week = weeks.find((w) => w.id === weekId);
-  const start = week ? new Date(week.opens_at).getTime() : Date.now();
-  const end = week ? Math.min(Date.now(), new Date(week.closes_at).getTime()) : Date.now();
+  const end = Date.now();
+  const start = Math.min(end, ...weeks.map((w) => new Date(w.opens_at).getTime()));
 
   const top = data?.rows.filter((r) => r.pos <= 3) ?? [];
 
@@ -46,7 +45,7 @@ export default function ScoreboardView({ api, weeks, weekId }: { api: Api; weeks
 
           <Card>
             <h2 className="mb-1 font-semibold text-tc">Point over tid</h2>
-            <p className="mb-4 text-xs text-slate-500">Top 3 i uge {weekId}. Opdateres automatisk.</p>
+            <p className="mb-4 text-xs text-slate-500">Top 3 over alle uger. Opdateres automatisk.</p>
             <div className="h-80 w-full">
               <ResponsiveContainer>
                 <LineChart data={merged(chartRows(data.rows), start, end)} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>

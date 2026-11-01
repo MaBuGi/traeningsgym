@@ -2,22 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Api, Attempt, Problem, Week } from './api';
 import { Card, Spinner } from './App';
 import MathHtml from './MathHtml';
-import { fmtDate, fmtLastDay, timeLeft } from './format';
+import { fmtDate } from './format';
 
 export const POINTS = [30, 15, 5];
 const LETTERS = ['A', 'B', 'C', 'D', 'E'];
 
-export function isOpen(w: Week, now = Date.now()) {
-  return new Date(w.opens_at).getTime() <= now && now < new Date(w.closes_at).getTime();
-}
 export function hasOpened(w: Week, now = Date.now()) {
   return new Date(w.opens_at).getTime() <= now;
 }
-// Den uge, man lander på: den åbne, ellers den senest åbnede.
+// Den uge, man lander på: den senest åbnede.
 export function defaultWeek(weeks: Week[]): number | null {
-  const open = weeks.find((w) => isOpen(w));
-  const opened = weeks.filter((w) => hasOpened(w));
-  return open?.id ?? opened[opened.length - 1]?.id ?? null;
+  return weeks.filter((w) => hasOpened(w)).at(-1)?.id ?? null;
 }
 
 type Filter = 'alle' | 'mangler' | 'loest';
@@ -26,7 +21,6 @@ export default function Problems({ api, weeks }: { api: Api; weeks: Week[] }) {
   const [weekId, setWeekId] = useState<number | null>(() => defaultWeek(weeks));
   const [problems, setProblems] = useState<Problem[] | null>(null);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<Filter>('alle');
   const [error, setError] = useState<string | null>(null);
   const week = weeks.find((w) => w.id === weekId) ?? null;
@@ -36,10 +30,9 @@ export default function Problems({ api, weeks }: { api: Api; weeks: Week[] }) {
     setProblems(null);
     setError(null);
     try {
-      const [p, a, ans] = await Promise.all([api.problems(weekId), api.attempts(weekId), api.weekAnswers(weekId)]);
+      const [p, a] = await Promise.all([api.problems(weekId), api.attempts()]);
       setProblems(p);
       setAttempts(a);
-      setAnswers(ans);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -53,14 +46,16 @@ export default function Problems({ api, weeks }: { api: Api; weeks: Week[] }) {
   }, [attempts]);
 
   const stats = useMemo(() => {
-    let points = 0, solved = 0, locked = 0;
-    for (const list of Object.values(byProblem)) {
-      points += list.reduce((s, a) => s + a.points, 0);
+    // Point tælles over alle uger; løst og låst gælder kun den valgte uge.
+    const points = attempts.reduce((s, a) => s + a.points, 0);
+    let solved = 0, locked = 0;
+    for (const p of problems ?? []) {
+      const list = byProblem[p.id] ?? [];
       if (list.some((a) => a.correct)) solved++;
       else if (list.length >= 3) locked++;
     }
     return { points, solved, locked };
-  }, [byProblem]);
+  }, [attempts, byProblem, problems]);
 
   if (weekId == null || !week) {
     const next = weeks[0];
@@ -72,7 +67,6 @@ export default function Problems({ api, weeks }: { api: Api; weeks: Week[] }) {
     );
   }
 
-  const open = isOpen(week);
   const total = problems?.length ?? 30;
   const shown = (problems ?? []).filter((p) => {
     const list = byProblem[p.id] ?? [];
@@ -88,10 +82,10 @@ export default function Problems({ api, weeks }: { api: Api; weeks: Week[] }) {
         <div>
           <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Uge {week.id} · {week.title}</div>
           <div className="mt-0.5 text-sm text-slate-600">
-            {open ? <>Åben til og med {fmtLastDay(week.closes_at)} · <b className="text-tc">{timeLeft(week.closes_at)}</b></> : <>Lukket. De rigtige svar er markeret.</>}
+            Åben. Opgaverne kan løses når som helst.
           </div>
         </div>
-        <Stat label="Dine point" value={stats.points} big />
+        <Stat label="Point i alt" value={stats.points} big />
         <Stat label="Løst" value={`${stats.solved}/${total}`} />
         <Stat label="Låst" value={stats.locked} />
         <div className="min-w-40 flex-1">
@@ -115,7 +109,7 @@ export default function Problems({ api, weeks }: { api: Api; weeks: Week[] }) {
       {!problems && !error && <Spinner />}
       <div className="grid gap-4 lg:grid-cols-2">
         {shown.map((p) => (
-          <ProblemCard key={p.id} api={api} problem={p} attempts={byProblem[p.id] ?? []} open={open} answer={answers[p.id]}
+          <ProblemCard key={p.id} api={api} problem={p} attempts={byProblem[p.id] ?? []}
             onAttempt={(a) => setAttempts((old) => [...old, a])} />
         ))}
       </div>
@@ -139,7 +133,7 @@ export function WeekTabs({ weeks, value, onChange, all }: { weeks: Week[]; value
           <button key={w.id} disabled={!opened} onClick={() => onChange(w.id)}
             className={'rounded-lg px-3 py-2 text-left text-sm ' + (value === w.id ? 'bg-tc text-white shadow' : opened ? 'bg-white text-slate-700 ring-1 ring-slate-200 hover:ring-tc' : 'cursor-not-allowed bg-slate-100 text-slate-400')}>
             <div className="font-medium">Uge {w.id} · {w.title}</div>
-            <div className="text-xs opacity-75">{opened ? (isOpen(w) ? 'åben nu' : 'lukket') : `åbner ${fmtDate(w.opens_at)}`}</div>
+            <div className="text-xs opacity-75">{opened ? 'åben' : `åbner ${fmtDate(w.opens_at)}`}</div>
           </button>
         );
       })}
@@ -156,8 +150,8 @@ function Stat({ label, value, big }: { label: string; value: number | string; bi
   );
 }
 
-function ProblemCard({ api, problem, attempts, open, answer, onAttempt }: {
-  api: Api; problem: Problem; attempts: Attempt[]; open: boolean; answer?: string; onAttempt: (a: Attempt) => void;
+function ProblemCard({ api, problem, attempts, onAttempt }: {
+  api: Api; problem: Problem; attempts: Attempt[]; onAttempt: (a: Attempt) => void;
 }) {
   const [choice, setChoice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -165,7 +159,7 @@ function ProblemCard({ api, problem, attempts, open, answer, onAttempt }: {
   const solvedBy = attempts.find((a) => a.correct);
   const wrong = attempts.filter((a) => !a.correct).map((a) => a.letter);
   const locked = !solvedBy && wrong.length >= 3;
-  const canAnswer = open && !solvedBy && !locked;
+  const canAnswer = !solvedBy && !locked;
   const worth = POINTS[wrong.length] ?? 0;
 
   async function send() {
@@ -196,8 +190,7 @@ function ProblemCard({ api, problem, attempts, open, answer, onAttempt }: {
         </div>
         {solvedBy ? <Badge color="emerald">✓ +{solvedBy.points} point</Badge>
           : locked ? <Badge color="rose">Låst · 0 point</Badge>
-          : open ? <Badge color="slate">{3 - wrong.length} forsøg · {worth} point</Badge>
-          : <Badge color="slate">Ikke besvaret</Badge>}
+          : <Badge color="slate">{3 - wrong.length} forsøg · {worth} point</Badge>}
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row">
@@ -209,7 +202,7 @@ function ProblemCard({ api, problem, attempts, open, answer, onAttempt }: {
         {problem.opts.map((o, i) => {
           const L = LETTERS[i];
           const tried = wrong.includes(L);
-          const isRight = solvedBy?.letter === L || answer === L;
+          const isRight = solvedBy?.letter === L; // kun deltagerens eget rigtige svar
           const selected = choice === L;
           const cls = isRight ? 'border-emerald-500 bg-emerald-50'
             : tried ? 'border-rose-200 bg-rose-50 text-slate-400 line-through decoration-rose-300'
@@ -238,7 +231,6 @@ function ProblemCard({ api, problem, attempts, open, answer, onAttempt }: {
         </div>
       )}
       {msg && <p className={'mt-3 rounded-lg px-3 py-2 text-sm font-medium ' + (msg.ok ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800')}>{msg.text}</p>}
-      {locked && !answer && open && <p className="mt-3 text-xs text-slate-500">Det rigtige svar vises, når ugen er slut.</p>}
     </Card>
   );
 }

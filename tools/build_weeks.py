@@ -15,12 +15,12 @@ HERE = Path(__file__).resolve().parent.parent
 GM = HERE.parent
 FIG = HERE / 'web' / 'public' / 'fig'
 
-# Ugerne i rækkefølge. Datoerne kan rettes her eller direkte i tabellen weeks i Supabase.
+# Ugerne i rækkefølge med åbningsdato (de lukker ikke igen). Datoerne kan rettes her eller direkte i tabellen weeks i Supabase.
 WEEKS = [
-    (1, 'algebra', 'Algebra', '2026-10-18 00:00', '2026-10-26 00:00'),
-    (2, 'kombinatorik', 'Kombinatorik', '2026-10-25 00:00', '2026-11-02 00:00'),
-    (3, 'talteori', 'Talteori', '2026-11-02 00:00', '2026-11-09 00:00'),
-    (4, 'geometri', 'Geometri', '2026-11-09 00:00', '2026-11-16 00:00'),
+    (1, 'algebra', 'Algebra', '2026-10-18 00:00'),
+    (2, 'kombinatorik', 'Kombinatorik', '2026-10-25 00:00'),
+    (3, 'talteori', 'Talteori', '2026-11-02 00:00'),
+    (4, 'geometri', 'Geometri', '2026-11-09 00:00'),
 ]
 PER_WEEK = 30
 BREAKOUT = 15
@@ -95,7 +95,7 @@ def main():
     errors = []
     FIG.mkdir(parents=True, exist_ok=True)
     weeks = []
-    for wid, topic, title, opens, closes in WEEKS:
+    for wid, topic, title, opens in WEEKS:
         off, used = official(topic), breakout(topic)
         if len(used) != BREAKOUT:
             errors.append(f'{topic}: fandt {len(used)} breakout-opgaver, ventede {BREAKOUT}')
@@ -124,7 +124,7 @@ def main():
             p['figure'] = crop(topic, p) if p['fig'] else None
         if len(probs) != PER_WEEK:
             errors.append(f'{topic}: {len(probs)} opgaver')
-        weeks.append((wid, topic, title, opens, closes, probs))
+        weeks.append((wid, topic, title, opens, probs))
         print(f'uge {wid} {topic}: {len(probs)} opgaver, {sum(1 for p in probs if p["figure"])} figurer, '
               f'{probs[0]["id"]} … {probs[-1]["id"]}')
 
@@ -137,11 +137,11 @@ def main():
 
     sql = ['-- GENERERET af tools/build_weeks.py. Indeholder svarene: må ikke committes eller lægges på hjemmesiden.',
            '-- Kør efter schema.sql. Kan køres igen: opgaver og svar opdateres, forsøg bevares.', 'begin;']
-    for wid, topic, title, opens, closes, probs in weeks:
-        sql.append(f"insert into weeks (id, topic, title, opens_at, closes_at) values ({wid}, '{topic}', '{title}', "
-                   f"timestamptz '{opens} Europe/Copenhagen', timestamptz '{closes} Europe/Copenhagen')\n"
+    for wid, topic, title, opens, probs in weeks:
+        sql.append(f"insert into weeks (id, topic, title, opens_at) values ({wid}, '{topic}', '{title}', "
+                   f"timestamptz '{opens} Europe/Copenhagen')\n"
                    f"  on conflict (id) do update set topic = excluded.topic, title = excluded.title, "
-                   f"opens_at = excluded.opens_at, closes_at = excluded.closes_at;")
+                   f"opens_at = excluded.opens_at;")
         for nr, p in enumerate(probs, 1):
             pid = f"{topic}/{p['id']}"
             sql.append(f"insert into problems (id, week_id, nr, source, text, opts, figure) values ('{pid}', {wid}, {nr}, "
